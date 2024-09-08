@@ -11,6 +11,7 @@ Tokens are calculated at the character level
 
 NOTE: All functions should normally be at the top,
 but they're with their respective sections to make it easier to follow along
+NOTE: Things are a little messy since the author jumps around a bit.
 """
 import matplotlib.pyplot as plt
 import netgraph
@@ -18,7 +19,9 @@ import pathlib
 import torch
 import tqdm
 
-DIR_PATH = pathlib.Path(__file__).resolve().parent
+DIR_READ = pathlib.Path(__file__).resolve().parent
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "makemore-bigrams"
+DIR_OUT.mkdir(exist_ok=True, parents=True)
 
 def load_txt_to_list(fname):
     path = pathlib.Path(fname)
@@ -33,7 +36,7 @@ def load_txt_to_list(fname):
 
 # INSPECTING THE DATASET ==========================================================================
 
-fname = DIR_PATH / "names.txt"
+fname = DIR_READ / "names.txt"
 words = load_txt_to_list(fname)
 print(words[:10])
 print(min(words, key = len))
@@ -111,16 +114,27 @@ def construct_matrix_adjacency_ngram(list_vectors, dict_index, size_context = 2)
 # Construct the documents
 dict_token_to_ix, dict_ix_to_token = construct_map_token_to_index("".join(words))
 
-list_tokens_extra = ["<S>", "<E>"]
-list_tokens_extra = ["."] # makes this change much later in the video
-for token in list_tokens_extra:
-    dict_token_to_ix[token] = len(dict_token_to_ix)
-    dict_ix_to_token[len(dict_ix_to_token)] = token
+bool_two_special_chars = False
+if bool_two_special_chars:
+    list_tokens_extra = ["<S>", "<E>"]
+    for token in list_tokens_extra:
+        dict_token_to_ix[token] = len(dict_token_to_ix)
+        dict_ix_to_token[len(dict_ix_to_token)] = token
 
-list_documents = [ ["."] + list(string) + ["."] for string in words ]
+    list_documents = [ ["<S>"] + list(string) + ["<E>"] for string in words ]
+    tag = "-two-special"
+else: # makes this change much later in the video
+    list_tokens_extra = ["."]
+    for token in list_tokens_extra:
+        dict_token_to_ix[token] = len(dict_token_to_ix)
+        dict_ix_to_token[len(dict_ix_to_token)] = token
+
+    list_documents = [ ["."] + list(string) + ["."] for string in words ]
+    tag = ""
 
 SIZE_NGRAMS = 2
 # Convert doc to indices as you go along
+# HINT: Use list_documents[0] to just construct the plots for 'emma'
 list_vectors = construct_n_grams(list_documents, dict_token_to_ix, size_context=SIZE_NGRAMS)
 
 # versus Convert doc to indices separately
@@ -134,7 +148,7 @@ print(N)
 
 def plot_adjacency_matrix_graph(matrix, dict_to_tokens, fname_out):
     netgraph.Graph(matrix, arrows=True, node_labels=dict_to_tokens)
-    plt.savefig(DIR_PATH / fname_out, dpi=300, bbox_inches='tight')
+    plt.savefig(DIR_OUT / fname_out, dpi=300, bbox_inches='tight')
     plt.close()
 
 def plot_adjacency_matrix_heatmap(matrix, dict_to_tokens, fname_out):
@@ -149,11 +163,11 @@ def plot_adjacency_matrix_heatmap(matrix, dict_to_tokens, fname_out):
             plt.text(i,j, label, ha="center", va="bottom", color="gray")
             plt.text(i,j, matrix[i,j], ha="center", va="top", color="gray")
     plt.axis("off")
-    plt.savefig(DIR_PATH / fname_out)
+    plt.savefig(DIR_OUT / fname_out)
 
-fname_graph = "graph-character.png"
-fname_heatmap = "heatmap-character.png"
-bool_plot = False
+fname_graph = f"graph-character{tag}.png"
+fname_heatmap = f"heatmap-character{tag}.png"
+bool_plot = True
 if bool_plot:
     plot_adjacency_matrix_graph(N.numpy(), dict_ix_to_token, fname_out=fname_graph)
     plot_adjacency_matrix_heatmap(N.numpy(), dict_ix_to_token, fname_out=fname_heatmap)
