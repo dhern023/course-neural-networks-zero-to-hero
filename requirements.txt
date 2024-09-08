@@ -1,3 +1,4 @@
 netgraph
 numpy
 matplotlib
+torch
