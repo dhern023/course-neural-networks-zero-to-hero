@@ -18,7 +18,9 @@ import pathlib
 import torch
 import tqdm
 
-DIR_PATH = pathlib.Path(__file__).resolve().parent
+DIR_READ = pathlib.Path(__file__).resolve().parent
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "makemore-bigrams"
+DIR_OUT.mkdir(exist_ok=True, parents=True)
 
 def load_txt_to_list(fname):
     path = pathlib.Path(fname)
@@ -33,7 +35,7 @@ def load_txt_to_list(fname):
 
 # INSPECTING THE DATASET ==========================================================================
 
-fname = DIR_PATH / "names.txt"
+fname = DIR_READ / "names.txt"
 words = load_txt_to_list(fname)
 print(words[:10])
 print(min(words, key = len))
@@ -134,7 +136,7 @@ print(N)
 
 def plot_adjacency_matrix_graph(matrix, dict_to_tokens, fname_out):
     netgraph.Graph(matrix, arrows=True, node_labels=dict_to_tokens)
-    plt.savefig(DIR_PATH / fname_out, dpi=300, bbox_inches='tight')
+    plt.savefig(DIR_OUT / fname_out, dpi=300, bbox_inches='tight')
     plt.close()
 
 def plot_adjacency_matrix_heatmap(matrix, dict_to_tokens, fname_out):
@@ -149,7 +151,7 @@ def plot_adjacency_matrix_heatmap(matrix, dict_to_tokens, fname_out):
             plt.text(i,j, label, ha="center", va="bottom", color="gray")
             plt.text(i,j, matrix[i,j], ha="center", va="top", color="gray")
     plt.axis("off")
-    plt.savefig(DIR_PATH / fname_out)
+    plt.savefig(DIR_OUT / fname_out)
 
 fname_graph = "graph-character.png"
 fname_heatmap = "heatmap-character.png"
