@@ -380,3 +380,5 @@ for i in range(20):
         context = context[1:] + [ix]
         out.append(dict_ix_to_token[ix])
         if ix == 0:
+            break
+    print(''.join(out))
