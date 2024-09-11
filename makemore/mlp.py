@@ -370,15 +370,15 @@ print("Best loss",BEST_LOSS, "with (DIMENSION, HIDDEN)", BEST_PARAMETERS)
 # Sampling from the model
 for i in range(20):
     out = []
-    context = [dict_token_to_ix['.']] * SIZE_CONTEXT
+    context = [dict_token_to_ix['.']] * (SIZE_CONTEXT-1)
     while True:
-        embed = list_parameters[0][torch.tensor(context)] # shape (1, SIZE_CONTEXT-1, SIZE_DIMENSION)
+        embed = list_parameters[0][torch.tensor(context).view(1,-1)] # shape (1, SIZE_CONTEXT-1, SIZE_DIMENSION)
         h = torch.tanh(torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2]) # hidden states
         logits = h @ list_parameters[3] + list_parameters[4]
         probs = torch.nn.functional.softmax(logits, dim=1)
-        ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
+        ix = torch.multinomial(probs, num_samples=1, replacement=True, generator=g).item()
         context = context[1:] + [ix]
         out.append(dict_ix_to_token[ix])
-        if ix == 0:
+        if ix == dict_token_to_ix['.']:
             break
     print(''.join(out))
