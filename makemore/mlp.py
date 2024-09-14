@@ -21,7 +21,9 @@ import torch.nn
 import torch.nn.functional
 import tqdm
 
-DIR_PATH = pathlib.Path(__file__).resolve().parent
+DIR_READ = pathlib.Path(__file__).resolve().parent
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "makemore-mlp"
+DIR_OUT.mkdir(exist_ok=True,parents=True)
 
 # reading data to tokens
 def load_txt_to_list(fname):
@@ -53,7 +55,7 @@ def construct_map_token_to_index(list_tokens):
 
     return dict_to_ix, dict_to_word
 
-fname = DIR_PATH / "names.txt"
+fname = DIR_READ / "names.txt"
 words = load_txt_to_list(fname)
 
 dict_token_to_ix, dict_ix_to_token = construct_map_token_to_index("".join(words))
@@ -152,11 +154,11 @@ for i in range(len(learning_rates)):
     dict_learning_rates["loss"][i] = loss.item()
 
 plt.plot(dict_learning_rates["rate"], dict_learning_rates["loss"])
-plt.savefig(DIR_PATH / "rates_vs_losses.png")
+plt.savefig(DIR_OUT / "rates_vs_losses.png")
 plt.close()
 
 plt.plot(dict_learning_rates["exponent"], dict_learning_rates["loss"])
-plt.savefig(DIR_PATH / "exponents_vs_losses.png")
+plt.savefig(DIR_OUT / "exponents_vs_losses.png")
 plt.close()
 
 # Finding the best learning rates analytically ----------------------------------------------------
@@ -172,11 +174,11 @@ derivatives_rates = first_derivative(
 
 plt.plot(dict_learning_rates["rate"], derivatives_rates)
 plt.plot(dict_learning_rates["rate"], dict_learning_rates["loss"])
-plt.savefig(DIR_PATH / "rates_vs_losses and vs_loss_derivative.png")
+plt.savefig(DIR_OUT / "rates_vs_losses and vs_loss_derivative.png")
 plt.close()
 plt.plot(dict_learning_rates["exponent"], derivatives_rates)
 plt.plot(dict_learning_rates["exponent"], dict_learning_rates["loss"])
-plt.savefig(DIR_PATH / "exponents_vs_losses and vs_loss_derivative.png")
+plt.savefig(DIR_OUT / "exponents_vs_losses and vs_loss_derivative.png")
 plt.close()
 
 def forward_pass(X, Y, list_parameters):
@@ -239,12 +241,12 @@ for i in range(len(dict_learning_rates_lower_percentile["rate"])):
     dict_learning_rates_lower_percentile["loss"][i] = loss.item()
 
 plt.plot(dict_learning_rates_lower_percentile["rate"], dict_learning_rates_lower_percentile["loss"])
-plt.savefig(DIR_PATH / f"rates_vs_loss {int(percent_upper_bound*100)}th percentile.png") # should be close to a flat line
+plt.savefig(DIR_OUT / f"rates_vs_loss {int(percent_upper_bound*100)}th percentile.png") # should be close to a flat line
 plt.close()
 
 plt.plot(dict_learning_rates_lower_percentile["rate"], dict_learning_rates_lower_percentile["loss"])
 plt.plot(dict_learning_rates_lower_percentile["rate"], derivatives_rates[mask])
-plt.savefig(DIR_PATH / f"rates_vs_loss and vs_derivatives {int(percent_upper_bound*100)}th_percentile.png")
+plt.savefig(DIR_OUT / f"rates_vs_loss and vs_derivatives {int(percent_upper_bound*100)}th_percentile.png")
 plt.close()
 
 # Learning rate decay -----------------------------------------------------------------------------
@@ -277,7 +279,7 @@ for i in range(num_epochs):
 
 print("Loss after learning rate decay:", loss.item())
 plt.plot(range(len(dict_loss_decay["loss"])), dict_loss_decay["loss"])
-plt.savefig(DIR_PATH/f"train-loss-decay.png")
+plt.savefig(DIR_OUT/f"train-loss-decay.png")
 plt.close()
 
 # Train/Test Split --------------------------------------------------------------------------------
@@ -323,7 +325,7 @@ def train_neural_net(xtr, ytr, list_parameters, num_epochs = 30000, size_batch =
 
     print("Loss after learning rate decay:", loss.item())
     plt.plot(list_steps, list_loss)
-    plt.savefig(DIR_PATH / f"train-loss-{sum(p.numel() for p in list_parameters)}.png")
+    plt.savefig(DIR_OUT / f"train-loss-{sum(p.numel() for p in list_parameters)}.png")
     plt.close()
 
     return list_parameters
@@ -366,3 +368,19 @@ for (SIZE_DIMENSION, SIZE_HIDDEN) in tqdm.tqdm(itertools.product(*list(dict_hype
         BEST_PARAMETERS = (SIZE_DIMENSION, SIZE_HIDDEN)
 
 print("Best loss",BEST_LOSS, "with (DIMENSION, HIDDEN)", BEST_PARAMETERS)
+
+# Sampling from the model
+for i in range(20):
+    out = []
+    context = [dict_token_to_ix['.']] * SIZE_CONTEXT
+    while True:
+        embed = list_parameters[0][torch.tensor(context)] # shape (1, SIZE_CONTEXT-1, SIZE_DIMENSION)
+        h = torch.tanh(torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2]) # hidden states
+        logits = h @ list_parameters[3] + list_parameters[4]
+        probs = torch.nn.functional.softmax(logits, dim=1)
+        ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
+        context = context[1:] + [ix]
+        out.append(dict_ix_to_token[ix])
+        if ix == 0:
+            break
+    print(''.join(out))
