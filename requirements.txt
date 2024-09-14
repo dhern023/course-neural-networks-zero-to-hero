@@ -2,3 +2,4 @@ netgraph
 numpy
 matplotlib
 torch
+tqdm

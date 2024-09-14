@@ -7,6 +7,10 @@ https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ
 Idea here is to create reproducible outcomes and build things gradually.
 Note: Will skip some things based on personal preference.
 
+# System Requirements
+
+Developed on an i5 5500U CPU via WSL 
+
 # Setup
 
 ```
