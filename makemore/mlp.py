@@ -370,17 +370,28 @@ for (SIZE_DIMENSION, SIZE_HIDDEN) in tqdm.tqdm(itertools.product(*list(dict_hype
 print("Best loss",BEST_LOSS, "with (DIMENSION, HIDDEN)", BEST_PARAMETERS)
 
 # Sampling from the model
-for i in range(20):
-    out = []
-    context = [dict_token_to_ix['.']] * (SIZE_CONTEXT-1)
-    while True:
-        embed = list_parameters[0][torch.tensor(context).view(1,-1)] # shape (1, SIZE_CONTEXT-1, SIZE_DIMENSION)
-        h = torch.tanh(torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2]) # hidden states
-        logits = h @ list_parameters[3] + list_parameters[4]
-        probs = torch.nn.functional.softmax(logits, dim=1)
-        ix = torch.multinomial(probs, num_samples=1, replacement=True, generator=g).item()
-        context = context[1:] + [ix]
-        out.append(dict_ix_to_token[ix])
-        if ix == dict_token_to_ix['.']:
-            break
-    print(''.join(out))
+def sample_from_model(list_parameters, num_samples = 20):
+    print("Sampling from the model")
+    g = torch.Generator().manual_seed(2147483647 + 10) # default seed from the torch docs
+    list_out = []
+    for i in range(num_samples):
+        temp_out = []
+        context = [dict_token_to_ix['.']] * (SIZE_CONTEXT-1)
+        while True:
+            embed = list_parameters[0][torch.tensor(context).view(1,-1)] # shape (1, SIZE_CONTEXT-1, SIZE_DIMENSION)
+            h = torch.tanh(torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2]) # hidden states
+            logits = h @ list_parameters[3] + list_parameters[4]
+            probs = torch.nn.functional.softmax(logits, dim=1)
+            ix = torch.multinomial(probs, num_samples=1, replacement=True, generator=g).item()
+            context = context[1:] + [ix]
+            temp_out.append(dict_ix_to_token[ix])
+            if ix == dict_token_to_ix['.']:
+                break
+        out = ''.join(temp_out)
+        list_out.append(out)
+    
+    return list_out
+
+samples = sample_from_model(list_parameters, num_samples=20)
+for sample in samples:
+    print(sample)
