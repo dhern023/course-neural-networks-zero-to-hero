@@ -7,7 +7,8 @@ import pathlib
 
 import micrograd
 
-DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "micrograd"
+DIRNAME_OUT = "micrograd"
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / DIRNAME_OUT
 DIR_OUT.mkdir(exist_ok=True, parents=True)
 
 class Vertex(micrograd.Value):

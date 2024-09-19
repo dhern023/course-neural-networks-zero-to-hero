@@ -21,8 +21,9 @@ import torch.nn
 import torch.nn.functional
 import tqdm
 
+DIRNAME_OUT = "makemore-mlp"
 DIR_READ = pathlib.Path(__file__).resolve().parent
-DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "makemore-mlp"
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / DIRNAME_OUT
 DIR_OUT.mkdir(exist_ok=True,parents=True)
 
 # reading data to tokens
