@@ -13,6 +13,7 @@ Reconstruct the 2003 paper with
         Y = softmax \circ linear \circ tanh \circ linear \circ embedding
 
 NOTE: We do things a litte inefficiently in order to demonstrate
+NOTE: The documents are only right-padded with a stop token. This is different from before.
 """
 import matplotlib.pyplot as plt
 import pathlib
