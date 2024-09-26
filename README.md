@@ -23,3 +23,6 @@ pip3 install requirements.txt
 ```
 python3 -m <folder-name>/filename.py
 ```
+
+# Troubleshooting
+- Torch devices are easy to use but hard to master. Python can raise an erroneous not defined error if you try to assign tensors to other tensors that are not on the same device, i.e., tensor_gpu = tensor_cpu * 9 
