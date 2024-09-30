@@ -1,4 +1,6 @@
 netgraph
 numpy
 matplotlib
+safetensors
 torch
+tqdm

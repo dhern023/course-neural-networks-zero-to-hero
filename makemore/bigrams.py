@@ -19,8 +19,9 @@ import pathlib
 import torch
 import tqdm
 
+DIRNAME_OUT = "makemore-bigrams"
 DIR_READ = pathlib.Path(__file__).resolve().parent
-DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "makemore-bigrams"
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / DIRNAME_OUT
 DIR_OUT.mkdir(exist_ok=True, parents=True)
 
 def load_txt_to_list(fname):
