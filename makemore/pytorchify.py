@@ -1,8 +1,6 @@
 """
 Different from the actual implementation in that we use pytorch completely.
 I'm interested in the activation statistics
-NOTE: torch.nn.Linear doesn't allow us to easily adjust fan-in, so our 
-saturation won't ever be "bad"
 TODO: Use the safetensor for reading the dataset
 """
 import matplotlib.pyplot as plt
@@ -115,7 +113,7 @@ Ytr, Ydev, Yts = ys.tensor_split((n1, n2), dim=0)
 
 class MLP(torch.nn.Module):
 
-    def __init__(self, num_embeddings, size_dimension, size_input, size_hidden, size_output):
+    def __init__(self, num_embeddings, size_dimension, size_input, size_hidden, size_output, bool_initialize=False):
         """
         """
         super(MLP, self).__init__() # override class
@@ -127,8 +125,8 @@ class MLP(torch.nn.Module):
         self.logits = torch.nn.Linear(size_hidden, size_output)
         self.activation = torch.nn.Tanh()
 
-        # Initialize weights
-        self.init_weights() # avoid the vanishing gradient problem
+        if bool_initialize:
+            self.init_weights() # avoid the vanishing gradient problem
 
     def init_weights(self):
         """
@@ -274,17 +272,19 @@ def train_model(instance_model, num_epochs, dataloader):
 SIZE_CONTEXT = 4
 SIZE_DIMENSION=10
 SIZE_HIDDEN=200
+dataset = torch.utils.data.TensorDataset(Xtr, Ytr)
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+NUM_EPOCHS = int(2e4) # int(1)  # int(2e5)
+
+bool_initialize_weights = True
 model = MLP(
     num_embeddings=len(dict_ix_to_token), 
     size_dimension=SIZE_DIMENSION, 
     size_input=SIZE_CONTEXT-1,
     size_hidden=SIZE_HIDDEN,
-    size_output=len(dict_ix_to_token)
+    size_output=len(dict_ix_to_token),
+    bool_initialize=bool_initialize_weights
 )
-
-dataset = torch.utils.data.TensorDataset(Xtr, Ytr)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
-NUM_EPOCHS = int(1) # int(2e4) # int(2e5)
 model, list_loss, dict_snapshots = train_model(model, NUM_EPOCHS, dataloader)
 plt.plot(list_loss)
 plt.savefig(DIR_OUT / "train-loss-decay-pytorch")
@@ -294,28 +294,50 @@ plot_grad_flow(model)
 
 # Forward-pass activation statistics ==============================================================
 
-plt.figure()
-plt.title(f'Activation Histogram for Each Layers')
-plt.xlabel('Activation Value')
-plt.ylabel('Frequency')
-for i, activation in enumerate(dict_snapshots["activations"][0]):
-    t = activation
-    saturated_percent = (t.abs() > 0.90).float().mean().mul_(100).item()
-    print(f"activation layer {i}: mean {t.mean():0.2f}, std {t.std():0.2f}, saturated: {saturated_percent}%")
-    tensors_hist = torch.histogram(t.detach().cpu(), bins=50, density=True) 
-    plt.plot(tensors_hist.bin_edges[:-1], tensors_hist.hist, label=f'For Layer {i+1}')
-plt.legend()
-plt.savefig(DIR_OUT / "activation-distibution-properly-initialized")
+def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9. tag="Activation"):
+    """
+    Assumes you stored these tensors using a hook in pytorch
+    """
+    out = plt.figure()
+    plt.title(f'{tag} Histogram for Each Layer')
+    plt.xlabel(f'{tag} Value')
+    plt.ylabel('Frequency')
+    for i, activation in enumerate(list_tensors):
+        t = activation
+        saturated_percent = (t.abs() > saturated_bound).float().mean().mul_(100).item()
+        print(f"{tag} layer {i}: mean {t.mean():0.2f}, std {t.std():0.2f}, saturated: {saturated_percent}%")
+        tensors_hist = torch.histogram(t.detach().cpu(), bins=50, density=True) 
+        plt.plot(tensors_hist.bin_edges[:-1], tensors_hist.hist, label=f'For Layer {i+1}')
+    plt.legend()
 
-plt.figure()
-plt.title(f'Activation Gradient Histogram for Each Layers')
-plt.xlabel('Activation Gradient Value')
-plt.ylabel('Frequency')
-for i, activation in enumerate(dict_snapshots["gradients"][0]):
-    t = activation
-    saturated_percent = (t.abs() > 0.90).float().mean().mul_(100).item()
-    print(f"gradient layer {i}: mean {t.mean():0.2f}, std {t.std():0.2f}, saturated: {saturated_percent}%")
-    tensors_hist = torch.histogram(t.detach().cpu(), bins=50, density=True) 
-    plt.plot(tensors_hist.bin_edges[:-1], tensors_hist.hist, label=f'For Layer {i+1}')
-plt.legend()
-plt.savefig(DIR_OUT / "activation-gradient-distibution-properly-initialized")
+    return out
+
+if bool_initialize_weights:
+    instance_figure = plot_activation_layer_statistics(
+        dict_snapshots["activations"][0],
+        saturated_bound=0.9,
+        tag="Activation"
+    )
+    instance_figure.savefig(DIR_OUT / f"activation-distibution-properly-initialized")
+
+    instance_figure = plot_activation_layer_statistics(
+        dict_snapshots["gradients"][0],
+        saturated_bound=0.9,
+        tag="Activation Gradient"
+    )
+    instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-properly-initialized")
+
+else:
+    instance_figure = plot_activation_layer_statistics(
+        dict_snapshots["activations"][0],
+        saturated_bound=0.9,
+        tag="Activation"
+    )
+    instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
+
+    instance_figure = plot_activation_layer_statistics(
+        dict_snapshots["gradients"][0],
+        saturated_bound=0.9,
+        tag="Activation Gradient"
+    )
+    instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-vanishing-gradients")
