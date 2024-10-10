@@ -1,3 +1,6 @@
+"""
+Covers the Activations & Gradients section
+"""
 import matplotlib.pyplot as plt
 import pathlib
 import random
@@ -214,14 +217,15 @@ def demo_initial_loss():
     Since our neural network is a classifier, we expect initial loss
         to be roughly NLL(1/|V|) ~ 2.29 for |V| = 26 tokens + 1 stop token
     """
+    num_labels = 4
     list_logits = [
-        torch.tensor([0.0, 0.0, 0.0, 0.0]), # torch.zeros(4)
-        torch.rand(4, generator=g), # same loss as above
+        torch.zeros(num_labels),
+        torch.rand(num_labels, generator=g), # same loss as above
         torch.tensor([0.0, 0.0, 5.0, 0.0]), # high probability of label, low loss
         torch.tensor([0.0, 5.0, 0.0, 0.0]), # low probability of label, high loss
-        torch.randn(4, generator=g), # near zero, not great
-        torch.randn(4, generator=g) * 10, # worse, higher initial loss
-        torch.randn(4, generator=g) * 100, # worse, very high initial loss
+        torch.randn(num_labels, generator=g), # near zero, not great
+        torch.randn(num_labels, generator=g) * 10, # worse, higher initial loss
+        torch.randn(num_labels, generator=g) * 100, # worse, very high initial loss
     ]
     Y = torch.tensor(2)
     for logits in list_logits:
