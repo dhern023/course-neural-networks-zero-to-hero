@@ -204,9 +204,12 @@ def plot_grad_flow(instance_model):
 
 def train_model(instance_model, num_epochs, dataloader):
     """
+    Training loop has been modified such that the epochs are the number of times
+        we pass over the entire sampled dataset based on the dataloader    
+
     https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/
 
-    Use a hook to save the activation's values and gradients each time it's called
+    Use hooks to save the activation's values and gradients each time it's called
         for the linear layer and each hidden layer
     """
     LEARNING_RATE = 0.1 # discovered empirocally
@@ -218,7 +221,7 @@ def train_model(instance_model, num_epochs, dataloader):
     epoch_decay = num_epochs*0.9
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[epoch_decay], gamma=0.1)
 
-    # a dict to store the activations
+    # Hooks to store the activations
     dict_activations = {}
     def get_activation(name):
         # the hook signature
@@ -274,7 +277,7 @@ SIZE_DIMENSION=10
 SIZE_HIDDEN=200
 dataset = torch.utils.data.TensorDataset(Xtr, Ytr)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
-NUM_EPOCHS = int(2e4) # int(1)  # int(2e5)
+NUM_EPOCHS = int(20) # int(1)  # int(2e4)
 
 bool_initialize_weights = True
 model = MLP(
@@ -292,9 +295,9 @@ plt.close()
 
 plot_grad_flow(model)
 
-# Forward-pass activation statistics ==============================================================
+# Forward & Backward pass activation statistics ===================================================
 
-def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9. tag="Activation"):
+def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9, tag="Activation"):
     """
     Assumes you stored these tensors using a hook in pytorch
     """
@@ -312,32 +315,22 @@ def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9. tag="A
 
     return out
 
+instance_figure = plot_activation_layer_statistics(
+    dict_snapshots["activations"][0],
+    saturated_bound=0.9,
+    tag="Activation"
+)
 if bool_initialize_weights:
-    instance_figure = plot_activation_layer_statistics(
-        dict_snapshots["activations"][0],
-        saturated_bound=0.9,
-        tag="Activation"
-    )
     instance_figure.savefig(DIR_OUT / f"activation-distibution-properly-initialized")
-
-    instance_figure = plot_activation_layer_statistics(
-        dict_snapshots["gradients"][0],
-        saturated_bound=0.9,
-        tag="Activation Gradient"
-    )
+else:
     instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-properly-initialized")
 
-else:
-    instance_figure = plot_activation_layer_statistics(
-        dict_snapshots["activations"][0],
-        saturated_bound=0.9,
-        tag="Activation"
-    )
+instance_figure = plot_activation_layer_statistics(
+    dict_snapshots["gradients"][0],
+    saturated_bound=0.9,
+    tag="Activation Gradient"
+)
+if bool_initialize_weights:
     instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
-
-    instance_figure = plot_activation_layer_statistics(
-        dict_snapshots["gradients"][0],
-        saturated_bound=0.9,
-        tag="Activation Gradient"
-    )
+else:
     instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-vanishing-gradients")
