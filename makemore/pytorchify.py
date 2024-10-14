@@ -186,8 +186,8 @@ def plot_grad_flow(instance_model):
     hist_max_grads = torch.histogram(max_grads_tensor, bins=bins)
 
     # Plotting
-    plt.bar(hist_max_grads.bin_edges[:-1], hist_max_grads.hist, alpha=0.1, lw=1, color="c")
-    plt.bar(hist_ave_grads.bin_edges[:-1], hist_ave_grads.hist, alpha=0.1, lw=1, color="b")
+    plt.bar(hist_max_grads.bin_edges[:-1], hist_max_grads.hist, width=hist_max_grads.bin_edges[1]-hist_max_grads.bin_edges[0], alpha=0.1, lw=1, color="c")
+    plt.bar(hist_ave_grads.bin_edges[:-1], hist_ave_grads.hist, width=hist_ave_grads.bin_edges[1]-hist_ave_grads.bin_edges[0], alpha=0.1, lw=1, color="b")
     plt.hlines(0, 0, len(ave_grads), lw=2, color="k")
     plt.xticks(torch.arange(len(ave_grads)), layers, rotation="vertical")
     plt.xlim(left=0, right=len(ave_grads))
