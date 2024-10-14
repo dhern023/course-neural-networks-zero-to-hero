@@ -260,9 +260,9 @@ if bool_demo_train_fix_initial:
 
 # Fixing saturated hidden layer -------------------------------------------------------------------
 
-def demo_hidden_layer_saturation():
+def demo_hidden_layer_saturation(xtr):
     """
-    NOTE: We're constructing these graphs using the entire dataset, not a batch
+    NOTE: We're constructing these activations using the entire dataset, not a batch
     """
     C = torch.randn(size=(len(dict_ix_to_token),SIZE_DIMENSION), generator=g)
     W1 = torch.randn(size=(SIZE_CONTEXT-1, SIZE_DIMENSION, SIZE_HIDDEN), generator=g)
@@ -271,21 +271,21 @@ def demo_hidden_layer_saturation():
     b2 = torch.randn(len(dict_ix_to_token), generator=g) * 0
     list_parameters = [C, W1, b1, W2, b2]
 
-    embed = list_parameters[0][Xtr] # shape (num_ngrams[indices], SIZE_CONTEXT-1, SIZE_DIMENSION)
+    embed = list_parameters[0][xtr] # shape (num_ngrams[indices], SIZE_CONTEXT-1, SIZE_DIMENSION)
     hidden = torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2] # hidden states
     h = torch.tanh(hidden) # activated hidden states
 
-    # grad of tanh is 1-t**2, and a very active hidden layer 
+    # grad of tanh is 1-t**2, and a very active hidden layer
     # means we are mostly passing t in {-1,1}, effectively killing the gradient
     # also, a grad of t = 0 implies the grad is inactive
-    tensors_hist = torch.histogram(h.cpu(), bins=50) 
-    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
+    tensors_hist = torch.histogram(h.cpu(), bins=50)
+    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist, width=tensors_hist.bin_edges[1]-tensors_hist.bin_edges[0])
     plt.savefig(DIR_OUT / "hidden-layer-active.png")
     plt.close()
 
     # why? most of these preactivations are going to be squashed to {-1,1}
-    tensors_hist = torch.histogram(hidden.cpu(), bins=50) 
-    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
+    tensors_hist = torch.histogram(hidden.cpu(), bins=50)
+    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist, width=tensors_hist.bin_edges[1]-tensors_hist.bin_edges[0])
     plt.savefig(DIR_OUT / "preactivations-outside-tanh-range.png")
     plt.close()
 
@@ -300,9 +300,9 @@ def demo_hidden_layer_saturation():
     plt.savefig(DIR_OUT / "dead-neuron-gradient-map-batch-size-4-hidden-size-30.png")
     plt.close()
 
-def demo_hidden_layer_desaturation():
+def demo_hidden_layer_desaturation(xtr):
     """
-    Squashing the initial weights reduces the amount of saturation
+    Squashing the initial weights reduces the amount of saturated values that go to {-1,1} due to rounding
     NOTE: We're constructing these graphs using the entire dataset, not a batch
     """
     C = torch.randn(size=(len(dict_ix_to_token),SIZE_DIMENSION), generator=g)
@@ -312,21 +312,21 @@ def demo_hidden_layer_desaturation():
     b2 = torch.randn(len(dict_ix_to_token), generator=g) * 0
     list_parameters = [C, W1, b1, W2, b2]
 
-    embed = list_parameters[0][Xtr] # shape (num_ngrams[indices], SIZE_CONTEXT-1, SIZE_DIMENSION)
+    embed = list_parameters[0][xtr] # shape (num_ngrams[indices], SIZE_CONTEXT-1, SIZE_DIMENSION)
     hidden = torch.einsum('ijk,jkl -> il', embed, list_parameters[1]) + list_parameters[2] # hidden states
     h = torch.tanh(hidden) # activated hidden states
 
-    # grad of tanh is 1-t**2, and a very active hidden layer 
-    # means we are mostly passing t in {-1,1}, effectively killing the gradient
+    # grad of tanh is 1-tanh(x)**2, and a very active hidden layer
+    # means we are mostly passing tanh(x) in {-1,1}, effectively killing the gradient
     # also, a grad of t = 0 implies the grad is inactive
-    tensors_hist = torch.histogram(h.cpu(), bins=50) 
-    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
+    tensors_hist = torch.histogram(h.cpu(), bins=50)
+    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist, width=tensors_hist.bin_edges[1]-tensors_hist.bin_edges[0])
     plt.savefig(DIR_OUT / "hidden-layer-inactive.png")
     plt.close()
 
     # why? most of these preactivations are going to be squashed to {-1,1}
-    tensors_hist = torch.histogram(hidden.cpu(), bins=50) 
-    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
+    tensors_hist = torch.histogram(hidden.cpu(), bins=50)
+    plt.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist, width=tensors_hist.bin_edges[1]-tensors_hist.bin_edges[0])
     plt.savefig(DIR_OUT / "preactivations-inside-tanh-range.png")
     plt.close()
 
@@ -335,8 +335,8 @@ def demo_hidden_layer_desaturation():
     plt.savefig(DIR_OUT / "gradient-map-good.png", dpi=300)
     plt.close()
 
-demo_hidden_layer_saturation()
-demo_hidden_layer_desaturation()
+demo_hidden_layer_saturation(Xtr)
+demo_hidden_layer_desaturation(Xtr)
 
 # Kaiming Unit
 
@@ -362,7 +362,7 @@ def demo_gaussian_spread():
     ax.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
     # output histogram
     ax = plt.subplot(122)
-    tensors_hist = torch.histogram(Y.cpu(), bins=50) 
+    tensors_hist = torch.histogram(Y.cpu(), bins=50)
     ax.set_title("Std for Gaussian Outputs Y=X@W")
     ax.bar(tensors_hist.bin_edges[:-1], tensors_hist.hist)
     plt.savefig(DIR_OUT / "std-visualization.png")
