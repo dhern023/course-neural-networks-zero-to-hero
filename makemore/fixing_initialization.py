@@ -259,7 +259,6 @@ if bool_demo_train_fix_initial:
     plt.close()
 
 # Fixing saturated hidden layer -------------------------------------------------------------------
-
 def demo_hidden_layer_saturation(xtr):
     """
     NOTE: We're constructing these activations using the entire dataset, not a batch
@@ -289,15 +288,16 @@ def demo_hidden_layer_saturation(xtr):
     plt.savefig(DIR_OUT / "preactivations-outside-tanh-range.png")
     plt.close()
 
-    plt.figure(figsize=(20,10))
     plt.imshow((h.abs() > 0.99)[:32].cpu(), cmap="gray", interpolation="nearest")
-    plt.savefig(DIR_OUT / "gradient-map-destroyed.png", dpi=300)
+    plt.tight_layout()
+    plt.savefig(DIR_OUT / "gradient-map-destroyed.png", dpi=300, bbox_inches='tight')
     plt.close()
 
     # a column of h = {1|-1} would be a "dead" neuron
     plt.title("Dead Neuron Example - Small Batch Size & Hidden Layer")
     plt.imshow((h.abs() > 0.99)[:4, :30].cpu(), cmap="gray", interpolation="nearest")
-    plt.savefig(DIR_OUT / "dead-neuron-gradient-map-batch-size-4-hidden-size-30.png")
+    plt.tight_layout()
+    plt.savefig(DIR_OUT / "dead-neuron-gradient-map-batch-size-4-hidden-size-30.png", bbox_inches='tight')
     plt.close()
 
 def demo_hidden_layer_desaturation(xtr):
@@ -330,20 +330,18 @@ def demo_hidden_layer_desaturation(xtr):
     plt.savefig(DIR_OUT / "preactivations-inside-tanh-range.png")
     plt.close()
 
-    plt.figure(figsize=(20,10))
     plt.imshow((h.abs() > 0.99)[:32].cpu(), cmap="gray", interpolation="nearest")
-    plt.savefig(DIR_OUT / "gradient-map-good.png", dpi=300)
+    plt.tight_layout()
+    plt.savefig(DIR_OUT / "gradient-map-good.png", dpi=300, bbox_inches='tight')
     plt.close()
 
 demo_hidden_layer_saturation(Xtr)
 demo_hidden_layer_desaturation(Xtr)
 
 # Kaiming Unit
-
 def demo_gaussian_spread():
     """
-    Note: It's possible the sample sizes are not large enough to
-    really get E[X]E[W] = E[Y]
+    Note: It's possible the sample sizes are not large enough to really get E[X]E[W] = E[Y]
     """
     gain = 1 # linearity
     num_inputs = 10
