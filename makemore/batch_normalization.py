@@ -1,6 +1,9 @@
 """
 We only implement the running calibration portion of batch_normalization
 since we can calculate the full bngain's mean and std.
+
+NOTE: We keep both running and calculated totals of bngain and mean values to highlight they
+    are roughly equivalent
 """
 
 import matplotlib.pyplot as plt
