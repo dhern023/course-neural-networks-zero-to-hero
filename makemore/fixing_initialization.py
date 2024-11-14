@@ -259,6 +259,12 @@ if bool_demo_train_fix_initial:
     plt.close()
 
 # Fixing saturated hidden layer -------------------------------------------------------------------
+def demo_estimate_gain():
+    """
+    Calculate 1 / E[f(Z)^2] where Z is the standard normal, f is an activation function
+    """
+    return 1 / numpy.mean(numpy.tanh(numpy.random.standard_normal(int(1e7)))**2)
+
 def demo_hidden_layer_saturation(xtr):
     """
     NOTE: We're constructing these activations using the entire dataset, not a batch
