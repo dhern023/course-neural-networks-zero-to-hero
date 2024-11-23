@@ -7,7 +7,8 @@ import numpy
 import matplotlib.pyplot as plt
 import pathlib
 
-DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / "micrograd"
+DIRNAME_OUT = "micrograd"
+DIR_OUT = pathlib.Path(__file__).resolve().parents[1] / "out" / DIRNAME_OUT
 DIR_OUT.mkdir(exist_ok=True, parents=True)
 
 # Derivative of a single variable =================================================================
