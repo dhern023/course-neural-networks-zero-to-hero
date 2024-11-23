@@ -277,7 +277,7 @@ SIZE_DIMENSION=10
 SIZE_HIDDEN=200
 dataset = torch.utils.data.TensorDataset(Xtr, Ytr)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
-NUM_EPOCHS = int(20) # int(1)  # int(2e4)
+NUM_EPOCHS = int(20) # int(1)  # int(2e4) # one per each dataset run
 
 bool_initialize_weights = True
 model = MLP(
@@ -323,7 +323,7 @@ instance_figure = plot_activation_layer_statistics(
 if bool_initialize_weights:
     instance_figure.savefig(DIR_OUT / f"activation-distibution-properly-initialized")
 else:
-    instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-properly-initialized")
+    instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
 
 instance_figure = plot_activation_layer_statistics(
     dict_snapshots["gradients"][0],
@@ -331,6 +331,6 @@ instance_figure = plot_activation_layer_statistics(
     tag="Activation Gradient"
 )
 if bool_initialize_weights:
-    instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
+    instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-properly-initialized")
 else:
     instance_figure.savefig(DIR_OUT / "activation-gradient-distibution-vanishing-gradients")
