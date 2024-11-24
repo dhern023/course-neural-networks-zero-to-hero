@@ -1,5 +1,8 @@
 """
 Covers the Activations & Gradients section
+
+Most of the fixes amount to setting up the paremeters properly,
+    so we setup a function to take in a list of parameters with hard-coded hyperparameters
 """
 import matplotlib.pyplot as plt
 import pathlib
@@ -374,7 +377,7 @@ def demo_gaussian_spread():
 
 demo_gaussian_spread()
 
-gain = 5/3 # tanh activation
+gain = 5/3 # tanh activation (TODO: Still haven't been able to verify this)
 C = torch.randn(size=(len(dict_ix_to_token),SIZE_DIMENSION), generator=g)
 W1 = torch.randn(size=(SIZE_CONTEXT-1, SIZE_DIMENSION, SIZE_HIDDEN), generator=g) * gain / (((SIZE_CONTEXT-1)*SIZE_DIMENSION)**0.5)
 b1 = torch.randn(SIZE_HIDDEN, generator=g) * 0.01
