@@ -239,8 +239,8 @@ def train_model(instance_model, num_epochs, dataloader):
         return hook
 
     # register forward hooks on the layers of choice
-    h1 = model.activation.register_forward_hook(get_activation('activation'))
-    b1 = model.activation.register_full_backward_hook(get_gradient('activation'))
+    h1 = instance_model.activation.register_forward_hook(get_activation('activation'))
+    b1 = instance_model.activation.register_full_backward_hook(get_gradient('activation'))
     dict_out = {
         "activations": [],
         "gradients": []
@@ -248,9 +248,9 @@ def train_model(instance_model, num_epochs, dataloader):
 
     for i in tqdm.tqdm(range(num_epochs), total = num_epochs//1000):
         for batch in dataloader:
-            model.zero_grad() # zero out the gradients
+            instance_model.zero_grad() # zero out the gradients
             xtr, ytr = batch
-            log_probs = model(xtr)
+            log_probs = instance_model(xtr)
             loss = loss_function(log_probs, ytr)
 
             loss.backward() # compute gradient
