@@ -116,11 +116,12 @@ class MLP(torch.nn.Module):
     def __init__(self, num_embeddings, size_dimension, size_input, size_hidden, size_output, bool_initialize=False):
         """
         """
+        num_layers = 4 # hard-coded
         super(MLP, self).__init__() # override class
         self.C = torch.nn.Embedding(num_embeddings,embedding_dim=size_dimension)
         self.W = torch.nn.Linear(size_input*size_dimension, size_hidden)
         self.hiddens = torch.nn.ModuleList(
-            [torch.nn.Linear(size_hidden, size_hidden) for _ in range(4)]
+            [torch.nn.Linear(size_hidden, size_hidden) for _ in range(num_layers)]
         )
         self.logits = torch.nn.Linear(size_hidden, size_output)
         self.activation = torch.nn.Tanh()
@@ -133,6 +134,8 @@ class MLP(torch.nn.Module):
         Pytorch torch.nn.Linear layers are automatically initialized using a variant of Kaiming (He) initialization.
         Problem is this works poorly with tanh, whose activations benefit more from Xavier (Godot).
         As is, we would run into the vanishing gradient problem if we didn't invoke batch_normalization
+
+        Uses initialization to be kaiming with tanh activations to emphasize batch_normalization benefits
         """
         torch.nn.init.kaiming_uniform_(self.W.weight, nonlinearity='tanh')
         torch.nn.init.zeros_(self.W.bias)
@@ -210,7 +213,7 @@ def train_model(instance_model, num_epochs, dataloader):
     https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/
 
     Use hooks to save the self.activation's values and gradients each time it's called
-        for the linear layer and each hidden layer
+        for the linear layer and each hidden layer 
     """
     LEARNING_RATE = 0.1 # discovered empirocally
     optimizer = torch.optim.SGD(instance_model.parameters(), lr=LEARNING_RATE)
