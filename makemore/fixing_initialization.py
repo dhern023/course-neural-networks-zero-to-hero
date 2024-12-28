@@ -25,7 +25,7 @@ g = torch.Generator(device=torch.get_default_device()).manual_seed(2147483647) #
 def load_txt_to_list(fname):
     path = pathlib.Path(fname)
     if not path.exists():
-        raise f"{fname} not found!"
+        raise Exception(f"{fname} not found!")
 
     list_out = []
     with open(path, "r") as file:
