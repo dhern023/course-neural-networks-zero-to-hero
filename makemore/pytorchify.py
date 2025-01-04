@@ -242,12 +242,10 @@ def train_model(instance_model, num_epochs, dataloader):
         return hook
 
     # register forward hooks on the layers of choice
-    h1 = instance_model.activation.register_forward_hook(get_activation('activation'))
-    b1 = instance_model.activation.register_full_backward_hook(get_gradient('activation'))
-    dict_out = {
-        "activations": [],
-        "gradients": []
-    }
+    list_hooks = [
+        instance_model.activation.register_forward_hook(get_activation('activation')),
+        instance_model.activation.register_full_backward_hook(get_gradient('activation'))
+    ]
 
     for i in tqdm.tqdm(range(num_epochs), total = num_epochs//1000):
         for batch in dataloader:
@@ -260,18 +258,21 @@ def train_model(instance_model, num_epochs, dataloader):
             optimizer.step() # update parameters
 
             list_loss.append(loss.log10().item())
-            dict_out["activations"].append(dict_activations['activation'])
-            dict_out["gradients"].append(dict_gradients['activation'])
 
             # detach the hooks to only save after the first run
-            h1.remove()
-            b1.remove()
+            for hook in list_hooks:
+                hook.remove()
 
         if i == epoch_decay:
             print("\tLoss before learning rate decay:", loss.item())
         scheduler.step()
 
     print("\tLoss after learning rate decay:", loss.item())
+
+    dict_out = {
+        "activations": dict_activations,
+        "gradients": dict_gradients
+    }
 
     return instance_model, list_loss, dict_out
 
@@ -319,7 +320,7 @@ def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9, tag="A
     return out
 
 instance_figure = plot_activation_layer_statistics(
-    dict_snapshots["activations"][0],
+    dict_snapshots["activations"]["activation"],
     saturated_bound=0.9,
     tag="Activation"
 )
@@ -329,7 +330,7 @@ else:
     instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
 
 instance_figure = plot_activation_layer_statistics(
-    dict_snapshots["gradients"][0],
+    dict_snapshots["gradients"]["activation"],
     saturated_bound=0.9,
     tag="Activation Gradient"
 )
