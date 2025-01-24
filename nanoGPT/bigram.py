@@ -1,3 +1,6 @@
+"""
+Trains a bigram model on the input text
+"""
 import pathlib
 import torch
 import torch.utils.data
@@ -58,11 +61,35 @@ xtr, ytr = next(iter(dataloader_train))
 
 logits, loss = model(xtr, ytr)
 
+SIZE_EVALUATE=300
+
+@torch.no_grad()
+def evaluate_model(instance_model):
+    dict_out = {}
+    instance_model.eval()
+    for (key, dataloader) in zip(("train", "test"), (dataloader_train, dataloader_test)):
+        tensor_losses = torch.zeros(SIZE_EVALUATE)
+        for i, batch in enumerate(dataloader):
+            xs, ys = batch
+            logits, loss = instance_model(xs, ys)
+            tensor_losses[i] = loss.item()
+            if i == SIZE_EVALUATE-1:
+                break
+        dict_out[key] = tensor_losses.mean()
+    instance_model.train()
+    
+    return dict_out
+
 # train model
-optimizer = torch.optim.AdamW(params = model.parameters(), lr = 1e-4)
-NUM_EPOCHS=0 # runs through the dataset
+optimizer = torch.optim.AdamW(params = model.parameters(), lr = 1e-3)
+NUM_EPOCHS=1 # runs through the dataset
 for epoch in range(NUM_EPOCHS):
-    for batch in dataloader_train:
+    for i, batch in enumerate(dataloader_train):
+
+        if i % SIZE_EVALUATE == 0:
+            dict_evaluate = evaluate_model(model)
+            print("iteration", i, "train_loss", dict_evaluate["train"], "test_loss", dict_evaluate["test"])
+
         xtr, ytr = batch
         model.zero_grad()
 
@@ -73,6 +100,6 @@ for epoch in range(NUM_EPOCHS):
     print(loss)
 
 tokens_single_char = torch.zeros((1,1), dtype = torch.long)
-sample = model.generate(input = tokens_single_char, max_new_tokens = 100) # 2d tensor
+sample = model.generate(input = tokens_single_char, max_new_tokens = 500) # 2d tensor
 sample_output = _tokenizer.character_decode(sample[0].tolist(), dict_to_token)
 print(sample_output)
