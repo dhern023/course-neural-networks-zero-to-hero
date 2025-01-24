@@ -4,6 +4,8 @@ class BigramLanguageModel(torch.nn.Module):
     """
     Treat logits = C[X]
     Then P = softmax(C[X])
+
+    Weak since tokens don't talk to each other
     """
     def __init__(self, size_vocab):
         super().__init__()
