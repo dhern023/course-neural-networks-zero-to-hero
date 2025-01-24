@@ -1,6 +1,7 @@
 netgraph
 numpy
 matplotlib
+requests
 safetensors
 torch
 tqdm
