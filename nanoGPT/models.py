@@ -2,14 +2,18 @@ import torch
 
 class BigramLanguageModel(torch.nn.Module):
     """
-    Treat logits = C[X]
+    Treat logits = C[X] (num_embeddings needed, space for each embedding)
     Then P = softmax(C[X])
 
     Weak since tokens don't talk to each other
     """
-    def __init__(self, size_vocab):
+    def __init__(self, num_embeddings, size_embedding):
+        """
+        Need one embedding for each possible token
+        Size of each embedding is a hyper-parameter
+        """
         super().__init__()
-        self.C = torch.nn.Embedding(num_embeddings=size_vocab, embedding_dim=size_vocab)
+        self.C = torch.nn.Embedding(num_embeddings=num_embeddings, embedding_dim=size_embedding)
 
     def forward(self, input, targets):
         """
@@ -34,7 +38,7 @@ class BigramLanguageModel(torch.nn.Module):
         tensor_out = input.clone()
         for i in range(max_new_tokens):
             logits, loss = self(tensor_out, None) # log counts
-            logits = logits[:,-1,:] # last token in each sequence reduce to (batch_size, size_vocab)
+            logits = logits[:,-1,:] # last token in each sequence reduce to (batch_size, num_embeddings)
             P = torch.nn.functional.softmax(logits, dim=-1) # exp(log_counts) / row_sum = P
             tensor_out_next = torch.multinomial(P, num_samples=1, replacement=True)
             tensor_out = torch.cat([tensor_out, tensor_out_next], dim = 1)

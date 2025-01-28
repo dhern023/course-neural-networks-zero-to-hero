@@ -26,6 +26,8 @@ vector_tokens = torch.tensor(list_tokens, dtype = torch.long)
 
 SIZE_CONTEXT=8
 SIZE_BATCH=4
+SIZE_VOCAB=len(dict_to_idx)
+SIZE_EMBEDDING=len(dict_to_idx)
 
 def demo_context_recursion(tensor):
     print(f"{'context':.<{SIZE_BATCH*SIZE_CONTEXT}} -> target")
@@ -55,8 +57,8 @@ dataset_train, dataset_test = torch.utils.data.random_split(dataset, [0.9, 0.1],
 dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=SIZE_BATCH, shuffle=True)
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATCH, shuffle=False)
 
-# Bigram model
-model = models.BigramLanguageModel(len(dict_to_idx)) # size_vocab
+# Train model -------------------------------------------------------------------------------------
+model = models.BigramLanguageModel(SIZE_VOCAB, SIZE_EMBEDDING)
 xtr, ytr = next(iter(dataloader_train))
 
 logits, loss = model(xtr, ytr)
