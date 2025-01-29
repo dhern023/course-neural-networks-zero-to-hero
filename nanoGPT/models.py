@@ -22,7 +22,7 @@ class BigramLanguageModel(torch.nn.Module):
 
         cross_entropy = NLL(softmax( logits ))
         """
-        logits = self.C(input) # (input.shape(), Channels) = (size_batch, size_context, embedding_dim)
+        logits = self.C(input) # (input.shape(), Channels) = (size_batch, size_context, size_embedding)
         loss = None
 
         if targets is not None:
