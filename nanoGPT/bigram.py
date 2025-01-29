@@ -63,7 +63,7 @@ xtr, ytr = next(iter(dataloader_train))
 
 logits, loss = model(xtr, ytr)
 
-SIZE_EVALUATE=300
+SIZE_EVALUATE=1000
 
 @torch.no_grad()
 def evaluate_model(instance_model):
