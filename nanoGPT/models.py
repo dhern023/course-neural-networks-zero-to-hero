@@ -51,6 +51,7 @@ class Head(torch.nn.Module):
     """
     def __init__(self, size_context, size_embedding, size_head):
         super().__init__()
+        self.size_head = size_head
         self.attention_query = torch.nn.Linear(size_embedding, size_head, bias=False)
         self.attention_key = torch.nn.Linear(size_embedding, size_head, bias=False)
         self.attention_value = torch.nn.Linear(size_embedding, size_head, bias=False)
@@ -72,12 +73,14 @@ class Head(torch.nn.Module):
         tensor_key = self.attention_key(input) # (size_batch, size_context, size_head)
         tensor_value = self.attention_value(input) # (size_batch, size_context, size_head)
         # calculate attention scores
-        # Explicitly torch.einsum('btm,mib -> bti',tensor_query, tensor_key.T) # (B, T, m) * (B, T, m)^T = (B, T, T)
-        tensor_wei = torch.einsum('btm,bim -> bti',tensor_query, tensor_key) # (B, T, T)
+        scalar = self.size_head ** -0.5
+        # Explicitly torch.einsum('btd,dib -> bti',tensor_query, tensor_key.T) # (B, T, d) * (B, T, d)^T = (B, T, T)
+        tensor_wei = torch.einsum('btd,bid -> bti',tensor_query, tensor_key) # (B, T, T)
+        tensor_wei = tensor_wei * scalar
         tensor_wei = tensor_wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T) with no future context
         # calculate attention
         tensor_wei_probs = torch.nn.functional.softmax(tensor_wei, dim = -1) # (B, T, T)
-        out = torch.einsum('btj,bjm->btm', tensor_wei_probs, tensor_value) # (B, T, m)
+        out = torch.einsum('btj,bjd->btd', tensor_wei_probs, tensor_value) # (B, T, d)
 
         return out
 
