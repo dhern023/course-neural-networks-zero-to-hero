@@ -155,13 +155,17 @@ class MultiHeadAttention(torch.nn.Module):
         self.size_embedding = size_embedding
         self.size_head = size_embedding // num_heads
         self.heads = torch.nn.ModuleList([Head(size_context, size_embedding, self.size_head) for i in range (num_heads)])
+        self.projection = torch.nn.Linear(in_features=size_embedding, out_features=size_embedding)
 
     def forward(self, input):
         """
         Concatentate the across the communication channel dimension (size_head) since num_heads * size_head = size_embedding
         NOTE: Don't like using -1 as a dimension, but there must be a safe reason for it.
+
+        The projection is needed to go back into the residual pathway
         """
-        return torch.cat([head(input) for head in self.heads], dim=-1) # (B, T, size_head * num_heads)
+        heads = torch.cat([head(input) for head in self.heads], dim=-1) # (B, T, size_head * num_heads)
+        projection = self.projection(heads)
 
 class BigramLanguageModelAttentionMulti(torch.nn.Module):
     """
