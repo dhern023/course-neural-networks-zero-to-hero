@@ -47,10 +47,8 @@ dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=SIZE_BA
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATCH, shuffle=False)
 
 # Train model -------------------------------------------------------------------------------------
-model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, 16)
-xtr, ytr = next(iter(dataloader_train))
-
-logits, loss = model(xtr, ytr)
+SIZE_HEAD = 16
+model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, SIZE_HEAD)
 
 SIZE_EVALUATE=1000
 
