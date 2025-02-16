@@ -238,9 +238,9 @@ class FeedForward(torch.nn.Module):
         """
         input shape (size_context, size_embedding)
         """
-        layer = self.layer1(input) # (size_context, size_embedding) * (size_embedding, size_embedding).T
+        layer = self.layer(input) # (size_context, size_embedding) * (size_embedding, size_embedding).T
         activation = self.relu(layer)
-        out = self.layer2(activation)
+        out = self.projection(activation)
 
         return out 
 
