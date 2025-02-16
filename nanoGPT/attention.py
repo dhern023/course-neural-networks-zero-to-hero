@@ -48,6 +48,12 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATC
 
 # Train model -------------------------------------------------------------------------------------
 SIZE_HEAD = 16
+NUM_HEADS = 4
+
+bool_multi_head = False
+if bool_multi_head:
+    model = models.BigramLanguageModelAttentionMulti(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
+else: # not multi head = single head
 model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, SIZE_HEAD)
 
 SIZE_EVALUATE=1000
