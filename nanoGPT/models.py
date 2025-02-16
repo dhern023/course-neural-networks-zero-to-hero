@@ -105,7 +105,7 @@ class BigramLanguageModelAttention(torch.nn.Module):
         Reshape things accordingly for torch.nn.functional.cross_entropy(., C, ...)
 
         cross_entropy = NLL(softmax( logits ))
-        NOTE: Remember, pytorch calls matmul()
+        NOTE: Remember, pytorch calls matmul() on the transpose
         """
         B, T = input.shape
         tokens = self.embedding_tokens(input) # (input.shape(), Channels) = (B, T, size_embedding)
@@ -178,7 +178,7 @@ class BigramLanguageModelAttentionMulti(torch.nn.Module):
         Reshape things accordingly for torch.nn.functional.cross_entropy(., C, ...)
 
         cross_entropy = NLL(softmax( logits ))
-        NOTE: Remember, pytorch calls matmul()
+        NOTE: Remember, pytorch calls matmul() on the transpose
         """
         B, T = input.shape
         tokens = self.embedding_tokens(input) # (input.shape(), Channels) = (B, T, size_embedding)
