@@ -104,10 +104,8 @@ random.shuffle(matrix_ngrams.clone())
 xs = matrix_ngrams[:,0:SIZE_CONTEXT-1]
 ys = matrix_ngrams[:,-1] # vector
 
-n1 = int(0.8 * xs.shape[0])
-n2 = int(0.9 * xs.shape[0])
-Xtr, Xdev, Xts = xs.tensor_split((n1, n2), dim=0)
-Ytr, Ydev, Yts = ys.tensor_split((n1, n2), dim=0)
+dataset = torch.utils.data.TensorDataset(xs, ys)
+dataset_train, dataset_dev, dataset_test = torch.utils.data.random_split(dataset, [0.8, 0.1, 0.1], generator=g)
 
 # Recreate using Pytorch API ----------------------------------------------------------------------
 
@@ -275,8 +273,7 @@ def train_model(instance_model, num_epochs, dataloader):
 SIZE_CONTEXT = 4
 SIZE_DIMENSION=10
 SIZE_HIDDEN=200
-dataset = torch.utils.data.TensorDataset(Xtr, Ytr)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+dataloader = torch.utils.data.DataLoader(dataset_train, batch_size=32, shuffle=True)
 NUM_EPOCHS = int(20) # int(1)  # int(2e4) # one per each dataset run
 
 bool_initialize_weights = True
