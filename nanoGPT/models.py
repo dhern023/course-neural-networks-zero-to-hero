@@ -222,17 +222,16 @@ class FeedForward(torch.nn.Module):
     max(0, xW1 + b1)W2 + b2
     = (ReLu(xW1+B1))W2 + b2
 
-    NOTE: This gets passed to the projection decoder to produce the logits
-        so we're only implementing ReLu(xW1+B1)
+    The projection is needed to go back into the residual pathway
     """
     def __init__(self, size_embedding):
         """
         Hard-coded to scale the inner layer by 4 per the paper.
         """
         super().__init__()
-        self.layer1 = torch.nn.Linear(in_features=size_embedding, out_features=4*size_embedding)
+        self.layer = torch.nn.Linear(in_features=size_embedding, out_features=4*size_embedding)
         self.relu = torch.nn.ReLU()
-        self.layer2 = torch.nn.Linear(in_features=4*size_embedding, out_features=size_embedding)
+        self.projection = torch.nn.Linear(in_features=4*size_embedding, out_features=size_embedding)
     
     def forward(self, input):
         """
