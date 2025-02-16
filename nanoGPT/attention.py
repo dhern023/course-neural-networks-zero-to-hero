@@ -54,7 +54,7 @@ bool_multi_head = False
 if bool_multi_head:
     model = models.BigramLanguageModelAttentionMulti(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
 else: # not multi head = single head
-model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, SIZE_HEAD)
+    model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, SIZE_HEAD)
 
 SIZE_EVALUATE=1000
 
