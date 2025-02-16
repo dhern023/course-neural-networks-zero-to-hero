@@ -62,7 +62,7 @@ class Head(torch.nn.Module):
         self.attention_key = torch.nn.Linear(size_embedding, size_head, bias=False)
         self.attention_value = torch.nn.Linear(size_embedding, size_head, bias=False)
         self.register_buffer('tril', torch.tril(torch.ones(size_context, size_context))) # not a parameter
-
+        self.dropout = torch.nn.Dropout(p=0.2)
 
     def forward(self, input):
         """
@@ -86,6 +86,7 @@ class Head(torch.nn.Module):
         tensor_wei = tensor_wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T) with no future context
         # calculate attention
         tensor_wei_probs = torch.nn.functional.softmax(tensor_wei, dim = -1) # (B, T, T)
+        tensor_wei_probs = self.dropout(tensor_wei_probs)
         out = torch.einsum('btj,bjd->btd', tensor_wei_probs, tensor_value) # (B, T, d)
 
         return out
@@ -156,6 +157,7 @@ class MultiHeadAttention(torch.nn.Module):
         self.size_head = size_embedding // num_heads
         self.heads = torch.nn.ModuleList([Head(size_context, size_embedding, self.size_head) for i in range (num_heads)])
         self.projection = torch.nn.Linear(in_features=size_embedding, out_features=size_embedding)
+        self.dropout = torch.nn.Dropout(p=0.2)
 
     def forward(self, input):
         """
@@ -166,6 +168,8 @@ class MultiHeadAttention(torch.nn.Module):
         """
         heads = torch.cat([head(input) for head in self.heads], dim=-1) # (B, T, size_head * num_heads)
         projection = self.projection(heads)
+        out = self.dropout(projection)
+        return out
 
 class BigramLanguageModelAttentionMulti(torch.nn.Module):
     """
@@ -236,14 +240,16 @@ class FeedForward(torch.nn.Module):
         self.layer = torch.nn.Linear(in_features=size_embedding, out_features=4*size_embedding)
         self.relu = torch.nn.ReLU()
         self.projection = torch.nn.Linear(in_features=4*size_embedding, out_features=size_embedding)
-    
+        self.dropout = torch.nn.Dropout(p=0.2)
+
     def forward(self, input):
         """
         input shape (size_context, size_embedding)
         """
         layer = self.layer(input) # (size_context, size_embedding) * (size_embedding, size_embedding).T
         activation = self.relu(layer)
-        out = self.projection(activation)
+        projection = self.projection(activation)
+        out = self.dropout(projection)
 
         return out 
 
