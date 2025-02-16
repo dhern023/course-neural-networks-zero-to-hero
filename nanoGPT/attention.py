@@ -1,5 +1,5 @@
 """
-Trains a bigram model on the input text
+Trains an attention bigram model on the input text
 """
 import pathlib
 import torch
@@ -50,11 +50,14 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATC
 SIZE_HEAD = 16
 NUM_HEADS = 4
 
-bool_multi_head = False
-if bool_multi_head:
-    model = models.BigramLanguageModelAttentionMulti(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
-else: # not multi head = single head
+model_name = "residual"
+if model_name == "single":
     model = models.BigramLanguageModelAttention(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, SIZE_HEAD)
+elif model_name == "multi":
+    model = models.BigramLanguageModelAttentionMulti(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
+elif model_name == "forward":
+    model = models.BigramLanguageModelAttentionMultiForward(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
+
 
 SIZE_EVALUATE=1000
 
