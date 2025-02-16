@@ -1,3 +1,6 @@
+"""
+Andrej uses n_embed as the size_dimension, which can be confusing
+"""
 import torch
 
 class BigramLanguageModel(torch.nn.Module):
