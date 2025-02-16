@@ -49,6 +49,7 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATC
 # Train model -------------------------------------------------------------------------------------
 SIZE_HEAD = 16
 NUM_HEADS = 4
+NUM_BLOCKS = 4
 
 model_name = "residual"
 if model_name == "single":
@@ -57,6 +58,8 @@ elif model_name == "multi":
     model = models.BigramLanguageModelAttentionMulti(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
 elif model_name == "forward":
     model = models.BigramLanguageModelAttentionMultiForward(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS)
+elif model_name == "residual":
+    model = models.BigramLanguageModelAttentionComplete(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS, NUM_BLOCKS)
 
 
 SIZE_EVALUATE=1000
