@@ -1,5 +1,6 @@
 """
-Andrej uses n_embed as the size_dimension, which can be confusing
+Andrej uses n_embed as the size_dimension, which can be confusing.
+His block size is size_context
 B = size_batch
 T = time and size_context
 C = channels and size_embedding

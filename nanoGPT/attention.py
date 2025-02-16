@@ -24,10 +24,11 @@ dict_to_idx, dict_to_token = _tokenizer.construct_character_mappings(data)
 list_tokens = _tokenizer.character_encode(data, dict_to_idx)
 vector_tokens = torch.tensor(list_tokens, dtype = torch.long)
 
-SIZE_CONTEXT=8
-SIZE_BATCH=4
+SIZE_CONTEXT=8 # 256
+SIZE_BATCH=4 # 64
 SIZE_VOCAB=len(dict_to_idx)
-SIZE_EMBEDDING_DIM=32
+SIZE_EMBEDDING_DIM=32 # 384
+LEARNING_RATE = 1e-3 # 4e-3
 
 # pad to account for missing data
 remainder = len(vector_tokens) % (SIZE_CONTEXT+1)
@@ -48,7 +49,7 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATC
 
 # Train model -------------------------------------------------------------------------------------
 SIZE_HEAD = 16
-NUM_HEADS = 4
+NUM_HEADS = 4 # 6
 NUM_BLOCKS = 4
 
 model_name = "residual"
@@ -82,7 +83,7 @@ def evaluate_model(instance_model):
     return dict_out
 
 # train model
-optimizer = torch.optim.AdamW(params = model.parameters(), lr = 1e-3)
+optimizer = torch.optim.AdamW(params = model.parameters(), lr = LEARNING_RATE)
 NUM_EPOCHS=1 # runs through the dataset
 for epoch in range(NUM_EPOCHS):
     for i, batch in enumerate(dataloader_train):
