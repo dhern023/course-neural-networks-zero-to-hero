@@ -318,8 +318,9 @@ class Block(torch.nn.Module):
         self.attention_heads = MultiHeadAttention(size_context, size_embedding, num_heads)
         self.projection = torch.nn.Linear(in_features=size_embedding, out_features=size_embedding)
         self.feed_forward = FeedForward(size_embedding)
-        self.layer_norm1 = torch.nn.LayerNorm(size_embedding)
-        self.layer_norm2 = torch.nn.LayerNorm(size_embedding)
+        self.prenorm_attention = torch.nn.LayerNorm(size_embedding)
+        self.postnorm_attention = torch.nn.LayerNorm(size_embedding)
+        self.postnorm_feedforward = torch.nn.LayerNorm(size_embedding)
 
     def forward(self, input):
         """
@@ -328,10 +329,13 @@ class Block(torch.nn.Module):
         Adds the residual forks via addition
         The projection is needed to go back into the residual pathway
         """
-        attention = input + self.projection(self.attention_heads(self.layer_norm1(input))) # (B, T, size_embedding)
-        feed_forward = attention + self.feed_forward(self.layer_norm2(attention)) # (B, T, size_embedding)
+        input_normed = self.prenorm_attention(input)
+        attention = input_normed + self.projection(self.attention_heads(input_normed)) # (B, T, size_embedding)
+        attention_normed = self.postnorm_attention(attention)
+        feed_forward = attention_normed + self.feed_forward(attention_normed) # (B, T, size_embedding)
+        out = self.postnorm_feedforward(feed_forward)
 
-        return feed_forward
+        return out
 
 class BigramLanguageModelAttentionComplete(torch.nn.Module):
     """
@@ -345,7 +349,6 @@ class BigramLanguageModelAttentionComplete(torch.nn.Module):
         self.blocks = torch.nn.Sequential(
             *(Block(size_context, size_embedding, num_heads) for i in range(num_blocks))
         )
-        self.layer_norm = torch.nn.LayerNorm(size_embedding)
         self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
 
     def forward(self, input, targets):
@@ -361,8 +364,7 @@ class BigramLanguageModelAttentionComplete(torch.nn.Module):
         positions = self.embedding_token_position(torch.arange(T)) # (input.shape(), Channels) = (T, size_embedding)
         input_embeddings = tokens + positions # broadcasted to (B, T, size_embedding)
         blocks = self.blocks(input_embeddings) # (B, T, size_embedding)
-        layer_norm = self.layer_norm(blocks)
-        logits = self.projection_decoder(layer_norm) # (B, T, size_embedding)  * (size_embedding, num_embeddings)^T -> (B, T, num_embeddings)
+        logits = self.projection_decoder(blocks) # (B, T, size_embedding)  * (size_embedding, num_embeddings)^T -> (B, T, num_embeddings)
 
         loss = None
 
