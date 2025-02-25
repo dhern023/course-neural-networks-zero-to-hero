@@ -104,10 +104,10 @@ class CharacterLevelAutoregressor(torch.nn.Module):
 
         tgt_mask = self.get_mask(T)
         if self.layer_decoder.self_attn.batch_first: # inputs are size (B, T, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
         else: # inputs need to be size (T, B, size_embedding)
             input_embeddings = input_embeddings.permute(1, 0, 2) # (T, B, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
             blocks = blocks.permute(1, 0, 2) # (B, T, size_embedding)
 
         logits = self.projection_decoder(blocks) # (B, T, size_embedding)  * (size_embedding, num_embeddings)^T -> (B, T, num_embeddings)
@@ -141,11 +141,12 @@ class CharacterLevelAutoregressor(torch.nn.Module):
 # Train model -------------------------------------------------------------------------------------
 NUM_HEADS = 4 # 6
 NUM_BLOCKS = 4
-model_name = 'character_model_state_dict.pth'
+fname_model = 'character_model_state_dict.pth'
+fname_hook = 'character_model_hook.pth'
 
 model = CharacterLevelAutoregressor(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS, NUM_BLOCKS)
-if (DIR_OUT / model_name).exists():
-    model.load_state_dict(torch.load(DIR_OUT / model_name))
+if (DIR_OUT / fname_model).exists():
+    model.load_state_dict(torch.load(DIR_OUT / fname_model))
 else: # need to train
 
     SIZE_EVALUATE=1000
@@ -173,7 +174,10 @@ else: # need to train
         # the hook signature
         def hook(model, input, output):
             dict_activations.setdefault(name, [])
-            dict_activations[name].append(output.detach())
+            if isinstance(output, tuple):
+                dict_activations[name].append(output[0].detach())
+            else:
+                dict_activations[name].append(output.detach())
         return hook
 
     dict_gradients = {}
@@ -186,7 +190,7 @@ else: # need to train
 
     # register hooks on all layers
     list_hooks = []
-    for name, module in instance_model.named_modules():
+    for name, module in model.named_modules():
         list_hooks.append(module.register_forward_hook(get_activation(name))) 
         list_hooks.append(module.register_full_backward_hook(get_gradient(name)))
 
@@ -219,7 +223,8 @@ else: # need to train
         "gradients": dict_activations
     }
 
-    torch.save(model.state_dict(), DIR_OUT / model_name)
+    torch.save(model.state_dict(), DIR_OUT / fname_model)
+    torch.save(dict_out, DIR_OUT / fname_hooks)
 
 # Evaluate ----------------------------------------------------------------------------------------
 
@@ -287,7 +292,6 @@ def visualize_attention_weights(input, model):
 
         out = "attention_weights.png"
         plt.savefig(DIR_OUT / out)
-
 
 tokens_input = torch.tensor(_tokenizer.character_encode("First", dict_to_idx), dtype = torch.long).view(-1,1)
 visualize_attention_weights(tokens_input, model)
