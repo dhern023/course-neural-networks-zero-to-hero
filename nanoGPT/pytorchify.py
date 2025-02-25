@@ -176,13 +176,19 @@ else: # need to train
             dict_activations[name].append(output.detach())
         return hook
 
-    # register forward hooks on the layers of choice
-    h1 = model.activation.register_forward_hook(get_activation('activation'))
-    b1 = model.activation.register_full_backward_hook(get_gradient('activation'))
-    dict_out = {
-        "activations": [],
-        "gradients": []
-    }
+    dict_gradients = {}
+    def get_gradient(name):
+        # the hook signature
+        def hook(module, grad_input, grad_output):
+            dict_gradients.setdefault(name, [])
+            dict_gradients[name].append(grad_output[0])
+        return hook
+
+    # register hooks on all layers
+    list_hooks = []
+    for name, module in instance_model.named_modules():
+        list_hooks.append(module.register_forward_hook(get_activation(name))) 
+        list_hooks.append(module.register_full_backward_hook(get_gradient(name)))
 
     # train model
     optimizer = torch.optim.AdamW(params = model.parameters(), lr = LEARNING_RATE)
@@ -202,14 +208,16 @@ else: # need to train
             loss.backward()
             optimizer.step()
 
-            dict_out["activations"].append(dict_activations['activation'])
-            dict_out["gradients"].append(dict_gradients['activation'])
-
             # detach the hooks to only save after the first run
-            h1.remove()
-            b1.remove()
+            for hook in list_hooks:
+                hook.remove()
 
         print(loss)
+
+    dict_out = {
+        "activations": dict_activations,
+        "gradients": dict_activations
+    }
 
     torch.save(model.state_dict(), DIR_OUT / model_name)
 
