@@ -236,11 +236,13 @@ def train_model(instance_model, num_epochs, dataloader):
             dict_gradients[name].append(grad_output[0])
         return hook
 
-    # register hooks on all layers
-    list_hooks = []
-    for name, module in instance_model.named_modules():
-        list_hooks.append(module.register_forward_hook(get_activation(name))) 
-        list_hooks.append(module.register_full_backward_hook(get_gradient(name)))
+    # register forward hooks on the layers of choice
+    h1 = model.activation.register_forward_hook(get_activation('activation'))
+    b1 = model.activation.register_full_backward_hook(get_gradient('activation'))
+    dict_out = {
+        "activations": [],
+        "gradients": []
+    }
 
     for i in tqdm.tqdm(range(num_epochs), total = num_epochs//1000):
         for batch in dataloader:
@@ -253,21 +255,18 @@ def train_model(instance_model, num_epochs, dataloader):
             optimizer.step() # update parameters
 
             list_loss.append(loss.log10().item())
+            dict_out["activations"].append(dict_activations['activation'])
+            dict_out["gradients"].append(dict_gradients['activation'])
 
             # detach the hooks to only save after the first run
-            for hook in list_hooks:
-                hook.remove()
+            h1.remove()
+            b1.remove()
 
         if i == epoch_decay:
             print("\tLoss before learning rate decay:", loss.item())
         scheduler.step()
 
     print("\tLoss after learning rate decay:", loss.item())
-
-    dict_out = {
-        "activations": dict_activations,
-        "gradients": dict_activations
-    }
 
     return instance_model, list_loss, dict_out
 
