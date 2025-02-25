@@ -147,7 +147,7 @@ class MLP(torch.nn.Module):
         embed = self.C(vector_input) # (num_ngrams[indices], size_input, size_dimension)
         embed = embed.view(embed.shape[0], -1) # reshape
         layer = self.W(embed) # (size_dimension, size_hidden)
-        layer = self.activation(layer)        
+        layer = self.activation(layer)
 
         for hidden in self.hiddens:
             layer = hidden(layer) # (size_hidden, size_hidden)
@@ -203,7 +203,7 @@ def plot_grad_flow(instance_model):
 def train_model(instance_model, num_epochs, dataloader):
     """
     Training loop has been modified such that the epochs are the number of times
-        we pass over the entire sampled dataset based on the dataloader    
+        we pass over the entire sampled dataset based on the dataloader
 
     https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/
 
@@ -236,13 +236,11 @@ def train_model(instance_model, num_epochs, dataloader):
             dict_gradients[name].append(grad_output[0])
         return hook
 
-    # register forward hooks on the layers of choice
-    h1 = model.activation.register_forward_hook(get_activation('activation'))
-    b1 = model.activation.register_full_backward_hook(get_gradient('activation'))
-    dict_out = {
-        "activations": [],
-        "gradients": []
-    }    
+    # register hooks on all layers
+    list_hooks = []
+    for name, module in instance_model.named_modules():
+        list_hooks.append(module.register_forward_hook(get_activation(name))) 
+        list_hooks.append(module.register_full_backward_hook(get_gradient(name)))
 
     for i in tqdm.tqdm(range(num_epochs), total = num_epochs//1000):
         for batch in dataloader:
@@ -255,18 +253,21 @@ def train_model(instance_model, num_epochs, dataloader):
             optimizer.step() # update parameters
 
             list_loss.append(loss.log10().item())
-            dict_out["activations"].append(dict_activations['activation'])
-            dict_out["gradients"].append(dict_gradients['activation'])
 
             # detach the hooks to only save after the first run
-            h1.remove()
-            b1.remove()
+            for hook in list_hooks:
+                hook.remove()
 
         if i == epoch_decay:
             print("\tLoss before learning rate decay:", loss.item())
         scheduler.step()
 
     print("\tLoss after learning rate decay:", loss.item())
+
+    dict_out = {
+        "activations": dict_activations,
+        "gradients": dict_activations
+    }
 
     return instance_model, list_loss, dict_out
 
@@ -278,8 +279,8 @@ NUM_EPOCHS = int(20) # int(1)  # int(2e4) # one per each dataset run
 
 bool_initialize_weights = True
 model = MLP(
-    num_embeddings=len(dict_ix_to_token), 
-    size_dimension=SIZE_DIMENSION, 
+    num_embeddings=len(dict_ix_to_token),
+    size_dimension=SIZE_DIMENSION,
     size_input=SIZE_CONTEXT-1,
     size_hidden=SIZE_HIDDEN,
     size_output=len(dict_ix_to_token),
@@ -306,7 +307,7 @@ def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9, tag="A
         t = activation
         saturated_percent = (t.abs() > saturated_bound).float().mean().mul_(100).item()
         print(f"{tag} layer {i}: mean {t.mean():0.2f}, std {t.std():0.2f}, saturated: {saturated_percent}%")
-        tensors_hist = torch.histogram(t.detach().cpu(), bins=50, density=True) 
+        tensors_hist = torch.histogram(t.detach().cpu(), bins=50, density=True)
         plt.plot(tensors_hist.bin_edges[:-1], tensors_hist.hist, label=f'For Layer {i+1}')
     plt.legend()
 
