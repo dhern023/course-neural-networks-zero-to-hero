@@ -18,6 +18,7 @@ import torch.utils.data
 
 # in house
 import _tokenizer
+import models_pytorchify
 
 # Defaults
 DIRNAME_OUT = "nanoGPT"
@@ -43,7 +44,7 @@ SIZE_CONTEXT=8 # 256
 SIZE_BATCH=4 # 64
 SIZE_VOCAB=len(dict_to_idx)
 SIZE_EMBEDDING_DIM=32 # 384
-LEARNING_RATE = 4e-3 # 4e-3
+LEARNING_RATE = 1e-5 # 4e-3
 
 # pad to account for missing data
 remainder = len(vector_tokens) % (SIZE_CONTEXT+1)
@@ -79,7 +80,7 @@ class CharacterLevelAutoregressor(torch.nn.Module):
         self.embedding_tokens = torch.nn.Embedding(num_embeddings=num_embeddings, embedding_dim=size_embedding)
         self.embedding_token_position = torch.nn.Embedding(num_embeddings=size_context, embedding_dim=size_embedding)
         self.layer_decoder = torch.nn.TransformerDecoderLayer(
-            d_model=size_embedding, nhead=num_heads, dim_feedforward=scalar*size_embedding
+            d_model=size_embedding, nhead=num_heads, dim_feedforward=scalar*size_embedding, dropout=0.2, bias=False, norm_first=True
         )
         self.transformer_decoder = torch.nn.TransformerDecoder(decoder_layer=self.layer_decoder, num_layers=num_blocks)
         self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
@@ -104,10 +105,10 @@ class CharacterLevelAutoregressor(torch.nn.Module):
 
         tgt_mask = self.get_mask(T)
         if self.layer_decoder.self_attn.batch_first: # inputs are size (B, T, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
         else: # inputs need to be size (T, B, size_embedding)
             input_embeddings = input_embeddings.permute(1, 0, 2) # (T, B, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
             blocks = blocks.permute(1, 0, 2) # (B, T, size_embedding)
 
         logits = self.projection_decoder(blocks) # (B, T, size_embedding)  * (size_embedding, num_embeddings)^T -> (B, T, num_embeddings)
@@ -144,6 +145,7 @@ NUM_BLOCKS = 4
 fname_model = 'character_model_state_dict.pth'
 fname_hook = 'character_model_hook.pth'
 
+# model = models_pytorchify.BigramLanguageModelAttentionPytorchify(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS, NUM_BLOCKS)
 model = CharacterLevelAutoregressor(SIZE_CONTEXT, SIZE_VOCAB, SIZE_EMBEDDING_DIM, NUM_HEADS, NUM_BLOCKS)
 if (DIR_OUT / fname_model).exists():
     model.load_state_dict(torch.load(DIR_OUT / fname_model))
