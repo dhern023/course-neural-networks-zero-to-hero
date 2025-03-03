@@ -298,6 +298,6 @@ visualize_attention_weights(tokens_input, model)
 
 # Sample ------------------------------------------------------------------------------------------
 tokens_single_char = torch.zeros((1,1), dtype = torch.long)
-sample = model.generate(input = tokens_single_char, size_context=SIZE_CONTEXT, max_new_tokens = 500) # 2d tensor
+sample = model.generate(tokens_single_char, SIZE_CONTEXT, 500) # 2d tensor
 sample_output = _tokenizer.character_decode(sample[0].tolist(), dict_to_token)
 print(sample_output)
