@@ -224,7 +224,7 @@ else: # need to train
     }
 
     torch.save(model.state_dict(), DIR_OUT / fname_model)
-    torch.save(dict_out, DIR_OUT / fname_hooks)
+    torch.save(dict_out, DIR_OUT / fname_hook)
 
 # Evaluate ----------------------------------------------------------------------------------------
 
@@ -240,7 +240,7 @@ def plot_attention_weights(attention_weights, layer_idx):
     for head_idx in range(num_heads):
         ax = axes[head_idx]
         attention_map = attention_weights[head_idx].cpu().detach().numpy()
-        sns.heatmap(attention_map, ax=ax, cmap='viridis', cbar=False)
+        seaborn.heatmap(attention_map, ax=ax, cmap='viridis', cbar=False)
         ax.set_title(f"Layer {layer_idx} - Head {head_idx}")
 
     plt.show()
