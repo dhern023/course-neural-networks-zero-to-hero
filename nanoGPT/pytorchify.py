@@ -105,12 +105,11 @@ class CharacterLevelAutoregressor(torch.nn.Module):
 
         tgt_mask = self.get_mask(T)
         if self.layer_decoder.self_attn.batch_first: # inputs are size (B, T, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
         else: # inputs need to be size (T, B, size_embedding)
             input_embeddings = input_embeddings.permute(1, 0, 2) # (T, B, size_embedding)
-            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
             blocks = blocks.permute(1, 0, 2) # (B, T, size_embedding)
-
         logits = self.projection_decoder(blocks) # (B, T, size_embedding)  * (size_embedding, num_embeddings)^T -> (B, T, num_embeddings)
 
         loss = None
@@ -124,6 +123,7 @@ class CharacterLevelAutoregressor(torch.nn.Module):
 
         return logits, loss
 
+    @torch.no_grad()
     def generate(self, input, size_context, max_new_tokens):
         """
         input is passed to (T, size_embedding) and (T, size_embedding)
