@@ -86,7 +86,7 @@ class CharacterLevelAutoregressor(torch.nn.Module):
             d_model=size_embedding, nhead=num_heads, dim_feedforward=scalar*size_embedding, dropout=0.2, bias=False, norm_first=True
         )
         self.transformer_decoder = torch.nn.TransformerDecoder(decoder_layer=self.layer_decoder, num_layers=num_blocks)
-        self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
+        self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings, bias=False) # (size_head, num_embeddings)
 
         # Share weights between attention head and output projection
         self.layer_decoder.self_attn.in_proj_weight = self.projection_decoder.weight
