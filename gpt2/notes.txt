@@ -1,0 +1,17 @@
+original transformer gave the positional encodings in the sinusodial fashion
+plotting the positional embedding weights against the number of tokens should reveal how the embedding behaves.
+- more jagged? not trained enough
+first layer of transformer weights can reveal some structure. mechanistic interpretability
+recall addition spreads the gradients to all of its child branches, so the redisuals can be optimized if they are spread correctly
+transformer ends up being a repeated implementation of map reduce, where map is the MLP/FFN portion and attention is the reduce portion
+another optimization is to apply the layer normalization before, not after
+we use GELU approx for historical curiosity, use GELU regular over RELU in practice, which handles the dead neuron caused by flat RELU
+- gelu always produce a local gradient
+- gelu is also outdated in favor of swiglo and other variants, say llama3
+pytorch's contiguos performs a concatenation operation
+tiktokenizer is a module for gpt2 tokenizer
+gpt tokenizer has a compression ratio of roughly 3:1 in savings, so 1000 tokens will be represented by 300
+There is a case in which the attention head and the attention output weights share the same memory address. The original paper says that they
+use the same weight matrix in the two embedding layers and in the presoftmax linear layer. Why? If two tokens are very similiar semantically, e.g. differ by casing or language, then they should have the same weights and outputs from the transformer.
+- Another side effect is the output embeddings (weights) also behave like word embeddings, too.
+- From a gradient perspective, this means the token embeddings will receive contributions from the output embeddings in the backward pass. 
