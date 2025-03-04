@@ -85,11 +85,6 @@ class CharacterLevelAutoregressor(torch.nn.Module):
         self.transformer_decoder = torch.nn.TransformerDecoder(decoder_layer=self.layer_decoder, num_layers=num_blocks)
         self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
 
-    def get_mask(self, sz):
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        return mask
-
     def forward(self, input, targets):
         """
         Inputs/Targets are of shape (size_batch, size_context)
@@ -103,7 +98,7 @@ class CharacterLevelAutoregressor(torch.nn.Module):
         positions = self.embedding_token_position(torch.arange(T)) # (input.shape(), Channels) = (T, size_embedding)
         input_embeddings = tokens + positions # broadcasted to (B, T, size_embedding)
 
-        tgt_mask = self.get_mask(T)
+        tgt_mask = torch.nn.Transformer.generate_square_subsequent_mask(sz=T)
         if self.layer_decoder.self_attn.batch_first: # inputs are size (B, T, size_embedding)
             blocks = self.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
         else: # inputs need to be size (T, B, size_embedding)
@@ -275,7 +270,7 @@ def visualize_attention_weights(input, model):
         positions = model.embedding_token_position(torch.arange(input.shape[1]))
         input_embeddings = tokens + positions
 
-        tgt_mask = model.get_mask(input.shape[1])
+        tgt_mask = torch.nn.Transformer.generate_square_subsequent_mask(sz=input.shape[1])
         if model.layer_decoder.self_attn.batch_first:
             blocks = model.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
         else:

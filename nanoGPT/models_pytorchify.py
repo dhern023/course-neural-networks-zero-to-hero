@@ -52,11 +52,6 @@ class Block(torch.nn.Module):
         self.postnorm_attention = torch.nn.LayerNorm(size_embedding)
         self.postnorm_feedforward = torch.nn.LayerNorm(size_embedding)
 
-    def get_mask(self, sz):
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        return mask
-
     def forward(self, input):
         """
         input is of size (B, size_context, size_embedding)
@@ -66,7 +61,7 @@ class Block(torch.nn.Module):
         """
         B, T, C = input.shape
         input_normed = self.prenorm_attention(input)
-        tgt_mask = self.get_mask(T)
+        tgt_mask = torch.nn.Transformer.generate_square_subsequent_mask(sz=T)
         attention_output, attention_weights = self.attention_heads(query=input_normed, key=input_normed, value=input_normed, attn_mask=tgt_mask)
         attention = input_normed + self.projection(attention_output) # (B, T, size_embedding)
         attention_normed = self.postnorm_attention(attention)
