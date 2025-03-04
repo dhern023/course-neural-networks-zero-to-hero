@@ -67,6 +67,9 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=SIZE_BATC
 
 class CharacterLevelAutoregressor(torch.nn.Module):
     """
+    Character-Level Autoregressive Transformer Model
+        with decoder only architecture
+
     Treat logits = C[X]
     Then use attention (multi)
 
@@ -84,6 +87,9 @@ class CharacterLevelAutoregressor(torch.nn.Module):
         )
         self.transformer_decoder = torch.nn.TransformerDecoder(decoder_layer=self.layer_decoder, num_layers=num_blocks)
         self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
+
+        # Share weights between attention head and output projection
+        self.layer_decoder.self_attn.in_proj_weight = self.projection_decoder.weight
 
     def forward(self, input, targets):
         """

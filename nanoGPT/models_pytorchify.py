@@ -84,6 +84,9 @@ class BigramLanguageModelAttentionPytorchify(torch.nn.Module):
         )
         self.projection_decoder = torch.nn.Linear(size_embedding, num_embeddings) # (size_head, num_embeddings)
 
+        # Share weights between attention head and output projection
+        self.blocks.attention_heads.in_proj_weight = self.projection_decoder.weight
+
     def forward(self, input, targets):
         """
         Inputs/Targets are of shape (size_batch, size_context)
