@@ -3,5 +3,6 @@ numpy
 matplotlib
 requests
 safetensors
+seaborn
 torch
 tqdm
