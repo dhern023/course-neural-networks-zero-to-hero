@@ -265,6 +265,10 @@ def plot_attention_weights(attention_weights, layer_idx, head_idx):
 
 
 def visualize_attention_weights(input, model):
+    """
+    Not compatible with BigramLanguageModelAttentionPytorchify
+        due to assuming model has a transfomer_decoder layer
+    """
     model.eval()  # Switch to evaluation mode
     with torch.no_grad():
         tokens = model.embedding_tokens(input)
