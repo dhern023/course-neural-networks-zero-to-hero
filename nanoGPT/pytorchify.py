@@ -272,10 +272,10 @@ def visualize_attention_weights(input, model):
 
         tgt_mask = torch.nn.Transformer.generate_square_subsequent_mask(sz=input.shape[1])
         if model.layer_decoder.self_attn.batch_first:
-            blocks = model.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = model.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
         else:
             input_embeddings = input_embeddings.permute(1, 0, 2)
-            blocks = model.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask)
+            blocks = model.transformer_decoder(tgt=input_embeddings, memory=input_embeddings, tgt_mask=tgt_mask, memory_mask=tgt_mask)
             blocks = blocks.permute(1, 0, 2)
 
         attention_weights = model.layer_decoder.self_attn.in_proj_weight.cpu().numpy()
