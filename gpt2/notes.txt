@@ -11,7 +11,17 @@ we use GELU approx for historical curiosity, use GELU regular over RELU in pract
 pytorch's contiguos performs a concatenation operation
 tiktokenizer is a module for gpt2 tokenizer
 gpt tokenizer has a compression ratio of roughly 3:1 in savings, so 1000 tokens will be represented by 300
-There is a case in which the attention head and the attention output weights share the same memory address. The original paper says that they
-use the same weight matrix in the two embedding layers and in the presoftmax linear layer. Why? If two tokens are very similiar semantically, e.g. differ by casing or language, then they should have the same weights and outputs from the transformer.
+There is an inductive bias that two embeddings should share similarities between tokens.
+- The original paper says that they use the same weight matrix in the two embedding layers and in the presoftmax linear layer. Why? If two tokens are very similiar semantically, e.g. differ by casing or language, then they should have the same weights and outputs from the transformer.
 - Another side effect is the output embeddings (weights) also behave like word embeddings, too.
 - From a gradient perspective, this means the token embeddings will receive contributions from the output embeddings in the backward pass. 
+- In practice, the attention head and the attention output weights share the same memory address, which also reduces the total number of parameters to train, i.e. B*T
+Recall javier initialization is the 1/sqrt(num_features), which in our context num_features is the vocabulary size
+The residual stream contributes no changes to the gradients, however, they are initialized with random unit normal variables, which means
+    a repeated residual stream will result in a sum of random unit normal variables, which will increase the variance.
+- scalar = 1 / sqrt(N) where N is the number of residual layers, i.e., N = 2 * num_layers
+- in which 2 is represented by the number of times the residual is called in each block, i.e., one by the attention, and one by the MLP/FFN
+Deep Learning can tolerate lower precisions than 32. Some other scientific computations do require higher precision.
+- int8 is used for inference, not for training becasue it has uniform spacing, which require float for a mbetter match to the normal distributions that occur during traninings.
+- Activations and weights are distributed as normals, so we require floats
+- Most deep learning is memory bound, so getting 60% utilization is actually quite good.
