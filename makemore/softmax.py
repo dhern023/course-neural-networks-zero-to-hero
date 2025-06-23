@@ -17,7 +17,7 @@ import tqdm
 def load_txt_to_list(fname):
     path = pathlib.Path(fname)
     if not path.exists():
-        raise f"{fname} not found!"
+        raise Exception(f"{fname} not found!")
 
     list_out = []
     with open(path, "r") as file:

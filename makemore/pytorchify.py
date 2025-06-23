@@ -26,7 +26,7 @@ g = torch.Generator().manual_seed(2147483647) # default seed from the torch docs
 def load_txt_to_list(fname):
     path = pathlib.Path(fname)
     if not path.exists():
-        raise f"{fname} not found!"
+        raise Exception(f"{fname} not found!")
 
     list_out = []
     with open(path, "r") as file:
@@ -114,11 +114,12 @@ class MLP(torch.nn.Module):
     def __init__(self, num_embeddings, size_dimension, size_input, size_hidden, size_output, bool_initialize=False):
         """
         """
+        num_layers = 4 # hard-coded
         super(MLP, self).__init__() # override class
         self.C = torch.nn.Embedding(num_embeddings,embedding_dim=size_dimension)
         self.W = torch.nn.Linear(size_input*size_dimension, size_hidden)
         self.hiddens = torch.nn.ModuleList(
-            [torch.nn.Linear(size_hidden, size_hidden) for _ in range(4)]
+            [torch.nn.Linear(size_hidden, size_hidden) for _ in range(num_layers)]
         )
         self.logits = torch.nn.Linear(size_hidden, size_output)
         self.activation = torch.nn.Tanh()
@@ -131,6 +132,8 @@ class MLP(torch.nn.Module):
         Pytorch torch.nn.Linear layers are automatically initialized using a variant of Kaiming (He) initialization.
         Problem is this works poorly with tanh, whose activations benefit more from Xavier (Godot).
         As is, we would run into the vanishing gradient problem if we didn't invoke batch_normalization
+
+        Uses initialization to be kaiming with tanh activations to emphasize batch_normalization benefits
         """
         torch.nn.init.kaiming_uniform_(self.W.weight, nonlinearity='tanh')
         torch.nn.init.zeros_(self.W.bias)
@@ -207,8 +210,8 @@ def train_model(instance_model, num_epochs, dataloader):
 
     https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/
 
-    Use hooks to save the activation's values and gradients each time it's called
-        for the linear layer and each hidden layer
+    Use hooks to save the self.activation's values and gradients each time it's called
+        for the linear layer and each hidden layer 
     """
     LEARNING_RATE = 0.1 # discovered empirocally
     optimizer = torch.optim.SGD(instance_model.parameters(), lr=LEARNING_RATE)
@@ -237,36 +240,37 @@ def train_model(instance_model, num_epochs, dataloader):
         return hook
 
     # register forward hooks on the layers of choice
-    h1 = model.activation.register_forward_hook(get_activation('activation'))
-    b1 = model.activation.register_full_backward_hook(get_gradient('activation'))
-    dict_out = {
-        "activations": [],
-        "gradients": []
-    }
-
+    list_hooks = [
+        instance_model.activation.register_forward_hook(get_activation('activation')),
+        instance_model.activation.register_full_backward_hook(get_gradient('activation'))
+    ]
+    
     for i in tqdm.tqdm(range(num_epochs), total = num_epochs//1000):
         for batch in dataloader:
-            model.zero_grad() # zero out the gradients
+            instance_model.zero_grad() # zero out the gradients
             xtr, ytr = batch
-            log_probs = model(xtr)
+            log_probs = instance_model(xtr)
             loss = loss_function(log_probs, ytr)
 
             loss.backward() # compute gradient
             optimizer.step() # update parameters
 
             list_loss.append(loss.log10().item())
-            dict_out["activations"].append(dict_activations['activation'])
-            dict_out["gradients"].append(dict_gradients['activation'])
 
             # detach the hooks to only save after the first run
-            h1.remove()
-            b1.remove()
+            for hook in list_hooks:
+                hook.remove()
 
         if i == epoch_decay:
             print("\tLoss before learning rate decay:", loss.item())
         scheduler.step()
 
     print("\tLoss after learning rate decay:", loss.item())
+
+    dict_out = {
+        "activations": dict_activations,
+        "gradients": dict_gradients
+    }
 
     return instance_model, list_loss, dict_out
 
@@ -313,7 +317,7 @@ def plot_activation_layer_statistics(list_tensors, saturated_bound = 0.9, tag="A
     return out
 
 instance_figure = plot_activation_layer_statistics(
-    dict_snapshots["activations"][0],
+    dict_snapshots["activations"]["activation"],
     saturated_bound=0.9,
     tag="Activation"
 )
@@ -323,7 +327,7 @@ else:
     instance_figure.savefig(DIR_OUT / f"activation-distibution-vanishing-gradients")
 
 instance_figure = plot_activation_layer_statistics(
-    dict_snapshots["gradients"][0],
+    dict_snapshots["gradients"]["activation"],
     saturated_bound=0.9,
     tag="Activation Gradient"
 )
